@@ -12,12 +12,8 @@ MESSAGE_DELIMITER = b'\n'  # Delimitador de mensajes
 if len(sys.argv) >= 2:
     TCP_IP = sys.argv[1]
 
-def recibir_mensajes(sock):
-    """
-    Recibe mensajes del servidor y los imprime.
-    
-    :param sock: Conexión del socket con el servidor
-    """
+# Recibe mensajes del servidor y los imprime.
+def recibir_mensajes(sock): # Conexión del socket con el servidor
     while True:
         try:
             data = bytearray()  # Buffer para acumular datos recibidos
@@ -41,8 +37,9 @@ def recibir_mensajes(sock):
             print(f"[CLIENTE] Error inesperado: {e}")
             break
 
+
+# Inicia el Cliente TCP y se conecta al servidor
 def iniciar_cliente():
-    """Inicia el Cliente TCP y se conecta al servidor."""
     print("[CLIENTE] Iniciando")
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

@@ -9,24 +9,14 @@ MESSAGE_DELIMITER = b'\n'  # Delimitador de mensajes
 
 clientes = {}  # Diccionario para almacenar las conexiones de clientes
 
+# Envia mensajes a todos los clientes
 def broadcast(message, source_conn):
-    """
-    Envía un mensaje a todos los clientes conectados excepto al remitente.
-    
-    :param message: Mensaje a difundir
-    :param source_conn: Conexión del cliente que envió el mensaje
-    """
     for conn in clientes.values():
-        if conn != source_conn:
-            conn.sendall(message)
+        if conn != source_conn: #Conexión del cliente que envió el mensaje
+            conn.sendall(message) # Mensaje 
 
+#Conexion con el cliente
 def contacto_cliente(conn, addr):
-    """
-    Maneja la comunicación con un cliente.
-    
-    :param conn: Conexión del cliente
-    :param addr: Dirección del cliente
-    """
     print(f"[SERVIDOR] Conectado satisfactoriamente con {addr}")
     clientes[addr] = conn  # Añadir el cliente al diccionario
     print(f"[SERVIDOR] Clientes conectados: {len(clientes)}")
@@ -58,8 +48,8 @@ def contacto_cliente(conn, addr):
     del clientes[addr]  # Remover el cliente del diccionario al desconectarse
     print(f"[SERVIDOR] Clientes conectados: {len(clientes)}")
 
+# Inicia el Servidor TCP y espera conexiones entrantes
 def iniciar_servidor():
-    """Inicia el Servidor TCP y espera conexiones entrantes."""
     print("[SERVIDOR] Iniciando")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((TCP_IP, TCP_PORT))  # Enlazar el socket a la dirección IP y puerto
