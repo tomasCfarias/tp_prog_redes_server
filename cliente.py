@@ -31,7 +31,7 @@ def recibir_mensajes(sock):
                     print(f"[CLIENTE] Mensaje Recibido: {msg}")
                     if msg.lower() == "logout":  # Finalizar la conexión si se recibe "logout"
                         print("[CLIENTE] Desconectando del Servidor")
-                        sock.close()
+                        sock.close() # Cerrar la conexión con el servidor
                         return
                     data.clear()
         except ConnectionError:
