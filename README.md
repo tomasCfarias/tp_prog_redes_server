@@ -5,7 +5,7 @@ Tomas Cabrera Farias
 
 Que hace "server.py":
 
-Este código implementa un servidor TCP que:
+Implementacion de un servidor TCP que:
 
     Acepta conexiones entrantes de clientes.
     Permite la comunicación entre el servidor y los clientes.
@@ -16,7 +16,7 @@ Este código implementa un servidor TCP que:
 
 Que hace "cliente.py":
 
-Este código implementa un cliente TCP que:
+Implementacion de un cliente TCP que:
 
     Se conecta a un servidor en la dirección IP y puerto especificados.
     Recibe mensajes del servidor en un hilo separado y los imprime.
