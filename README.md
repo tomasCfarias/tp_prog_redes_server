@@ -6,12 +6,12 @@ Tomas Cabrera Farias
 Que hace "server.py":
 
 Este código implementa un servidor TCP multicliente que:
-
     Acepta conexiones entrantes de clientes.
     Permite la comunicación entre el servidor y los clientes.
     Difunde mensajes a todos los clientes si el mensaje comienza con '#'.
     Finaliza la conexión si el cliente envía "logout".
     Mantiene un registro de los clientes conectados y muestra la cantidad de conexiones activas.
+    
 
 Que hace "cliente.py":
 
