@@ -5,7 +5,7 @@ Tomas Cabrera Farias
 
 Que hace "server.py":
 
-Este código implementa un servidor TCP multicliente que:
+Este código implementa un servidor TCP que:
 
     Acepta conexiones entrantes de clientes.
     Permite la comunicación entre el servidor y los clientes.
