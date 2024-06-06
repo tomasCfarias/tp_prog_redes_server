@@ -1,56 +1,65 @@
 import threading
 import socket
 
-TCP_IP = ''
+# Configuración de la dirección IP y puerto del servidor
+TCP_IP = '0.0.0.0'  # Escuchar en todas las interfaces de red disponibles
 TCP_PORT = 12345
-BUFFER_SIZE = 20  # default 1024 a menor mas velocidad
+BUFFER_SIZE = 1024
+MESSAGE_DELIMITER = b'\n'
 
-def atiende_cliente(conn, addr):
-    while 1:
-        msg = ''
-        datos = bytearray()
-        print ("[SERVIDOR ", addr, "] Esperando datos del cliente")
-        fin_msg = False
-        try:
-            while not fin_msg:
-                recvd = conn.recv(BUFFER_SIZE)
-                if not recvd:
-                    raise ConnectionError()
+clientes = {}  # Diccionario para almacenar las conexiones de clientes
+
+def broadcast(message, source_conn):
+    """Envía un mensaje a todos los clientes conectados excepto al remitente."""
+    for conn in clientes.values():
+        if conn != source_conn:
+            conn.sendall(message)
+
+def contacto_cliente(conn, addr):
+    """Maneja la comunicación con un cliente."""
+    print(f"[SERVIDOR] Conectado satisfactoriamente con {addr}")
+    clientes[addr] = conn #Añadir el cliente al diccionario.
+    print(f"[SERVIDOR] Clientes conectados: {len(clientes)}")
+
+    with conn:
+        data = bytearray()
+        while True:
+            try:
+                received = conn.recv(BUFFER_SIZE) #Recibir datos del cliente.
+                if not received:
                     break
-                datos += recvd
-                print ("[SERVIDOR ", addr, "] Recibidos ", len(recvd), " bytes")
-                if b'\n' in recvd:
-                    msg = datos.rstrip(b'\n').decode('utf-8')
-                    
-                    fin_msg = True
-            print ("[SERVIDOR ", addr, "] Recibidos en total ", len(datos), " bytes")
-            print ("[SERVIDOR ", addr, "] Datos recibidos del cliente con exito: \"" + msg + "\"")
-            print ("[SERVIDOR ", addr, "] Enviando respuesta para el cliente")
-            conn.send(datos)  # echo
-            print ("[SERVIDOR ", addr, "] Resposta enviada: \"" + msg + "\"")
-        except BaseException as error:
-            print ("[SERVIDOR ", addr, "] [ERROR] Socket error: ", error)
-            break
-    print ("[SERVIDOR ", addr, "] cerrando conexion ", addr)
-    conn.close()
+                data += received
+                if MESSAGE_DELIMITER in received:
+                    msg = data.rstrip(MESSAGE_DELIMITER).decode('utf-8')
+                    print(f"[SERVIDOR] Mensaje de {addr}: {msg}")
+                    if msg.lower() == "logout": #Finalizar la conexión si el cliente envía logout.
+                        break
+                    if msg.startswith('#'): #Difundir el mensaje a todos los clientes si empieza con #.
+                        broadcast(data, conn)
+                    else:
+                        conn.sendall(data)  #Enviar el eco de vuelta al cliente.
+                    data.clear()
+            except ConnectionError:
+                break
+            except Exception as error:
+                print(f"[SERVIDOR] Error: {error}")
+                break
+    print(f"[SERVIDOR] Desconectando {addr}")
+    del clientes[addr] #Remover el cliente del diccionario al desconectarse.
+    print(f"[SERVIDOR] Clientes conectados: {len(clientes)}")
 
-print ("[SERVIDOR] Iniciando")
+def iniciar_servidor():
+    """Inicia el Servidor TCP"""
+    print("[SERVIDOR] Iniciando")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((TCP_IP, TCP_PORT)) #Enlazar el socket a la dirección IP y puerto.
+        s.listen() #Escuchar conexiones entrantes.
+        print(f"[SERVIDOR] Escuchando en {TCP_PORT}")
+        while True:
+            conn, addr = s.accept() #Aceptar una nueva conexión y crear un hilo para manejarla.
+            print(f"[SERVIDOR] Nueva conexión de {addr}")
+            thread = threading.Thread(target=contacto_cliente, args=(conn, addr), daemon=True)
+            thread.start()
 
-print ("[SERVIDOR] Abriendo socket " + str(TCP_PORT) + " y escuchando")
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((TCP_IP, TCP_PORT))
-s.listen(1)
-
-while 1:
-    print ("[SERVIDOR] Esperando conexion")
-    conn, addr = s.accept()
-    thread = threading.Thread(target=atiende_cliente,
-                              args=[conn, addr],
-                              daemon=True)
-    thread.start()
-    print ("[SERVIDOR ", addr, "] Conexion con el cliente realizada. Direccion de conexion:", addr)    
-
-print ("[SERVIDOR] Cerrando socket " + str(TCP_PORT))
-s.close()
-
-print ("[SERVIDOR] fin_msg")
+if __name__ == "__main__":
+    iniciar_servidor()
