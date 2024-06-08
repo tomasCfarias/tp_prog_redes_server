@@ -8,6 +8,8 @@ TCP_PORT = 12345
 BUFFER_SIZE = 1024  # Tamaño del búfer para la recepción de datos
 MESSAGE_DELIMITER = b'\n'  # Delimitador de mensajes
 
+socket_cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 # Permitir pasar la IP del servidor como argumento
 if len(sys.argv) >= 2:
     TCP_IP = sys.argv[1]
@@ -23,10 +25,10 @@ def recibir_mensajes(sock): # Conexión del socket con el servidor
                     break
                 data += recvd
                 if MESSAGE_DELIMITER in recvd:
-                    msg = data.rstrip(MESSAGE_DELIMITER).decode('utf-8')
-                    print(f"[CLIENTE] Mensaje Recibido: {msg}")
-                    if msg.lower() == "logout":  # Finalizar la conexión si se recibe "logout"
-                        print("[CLIENTE] Desconectando del Servidor")
+                    mensaje = data.rstrip(MESSAGE_DELIMITER).decode('utf-8')
+                    print(f"[CLIENTE] Se envio: {mensaje}")
+                    if mensaje.lower() == "logout":  # Finalizar la conexión si se recibe "logout"
+                        print("[CLIENTE] Desconectando del SERVER")
                         sock.close() # Cerrar la conexión con el servidor
                         return
                     data.clear()
@@ -42,20 +44,22 @@ def recibir_mensajes(sock): # Conexión del socket con el servidor
 def iniciar_cliente():
     print("[CLIENTE] Iniciando")
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    with socket_cliente as s:
         print("[CLIENTE] Conectando")
         s.connect((TCP_IP, TCP_PORT))  # Conectarse al servidor
-        print(f"[CLIENTE] Conectado satisfactoriamente a {TCP_IP}:{TCP_PORT}")
+        print(f"[CLIENTE] Conexion exitosa a {TCP_IP}:{TCP_PORT}")
 
         receiver_thread = threading.Thread(target=recibir_mensajes, args=(s,), daemon=True)
         receiver_thread.start()  # Iniciar un hilo para recibir mensajes
 
         while True:
-            msg = input()  # Leer entrada del usuario y enviarla al servidor
-            if msg.lower() == "logout":  # Enviar "logout" y terminar la conexión
-                s.sendall((msg + '\n').encode('utf-8'))
+            mensaje = input()  # Leer entrada del usuario y enviarla al servidor
+            if mensaje.lower() == "logout":  # Enviar "logout" y terminar la conexión
+                s.sendall((mensaje + '\n').encode('utf-8'))
                 break
-            s.sendall((msg + '\n').encode('utf-8'))
+            s.sendall((mensaje + '\n').encode('utf-8'))
+
+
 
 if __name__ == "__main__":
     iniciar_cliente()
