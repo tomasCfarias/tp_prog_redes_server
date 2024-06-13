@@ -9,62 +9,69 @@ MESSAGE_DELIMITER = b'\n'  # Delimitador de mensajes
 
 clientes = {}  # Diccionario para almacenar las conexiones de clientes
 
-# Envia mensajes a todos los clientes
-def broadcast(message, source_conn):
+# Envía mensajes a todos los clientes
+def broadcast(mensaje, fuente_conn):
     for conn in clientes.values():
-        if conn != source_conn: #Conexión del cliente que envió el mensaje
-            conn.sendall(message) # Mensaje 
+        if conn != fuente_conn:  # Evitar enviar el mensaje de vuelta al cliente origen
+            conn.sendall(mensaje)  # Enviar el mensaje a los demás clientes
 
-#Conexion con el cliente
-def contacto_cliente(conn, addr):
+# Manejar la conexión con un cliente
+def manejar_cliente(conn, addr):
     print(f"[SERVIDOR] Conectado satisfactoriamente con {addr}")
     clientes[addr] = conn  # Añadir el cliente al diccionario
     print(f"[SERVIDOR] Clientes conectados: {len(clientes)}")
 
     with conn:
-        data = bytearray()  # Buffer para acumular datos recibidos
+        buffer_datos = bytearray()  # Buffer para acumular datos recibidos
         while True:
             try:
-                received = conn.recv(BUFFER_SIZE)  # Recibir datos del cliente
-                if not received:
+                recibido = conn.recv(BUFFER_SIZE)  # Recibir datos del cliente
+                if not recibido:
                     break
-                data += received
-                if MESSAGE_DELIMITER in received:
-                    mensaje = data.rstrip(MESSAGE_DELIMITER).decode('utf-8')
-                    print(f"[SERVIDOR]{addr} dice: {mensaje}  ")
+                buffer_datos += recibido
+                if MESSAGE_DELIMITER in recibido:
+                    mensaje = buffer_datos.rstrip(MESSAGE_DELIMITER).decode('utf-8')
+                    print(f"[SERVIDOR] {addr} dice: {mensaje}")
+                    
                     if mensaje.lower() == "logout":  # Finalizar la conexión si el cliente envía "logout"
                         break
-                    if mensaje.startswith('#'):  # Difundir el mensaje a todos los clientes si empieza con "#"
-                        broadcast(data, conn)
+                    elif mensaje.startswith('#'):  # Difundir el mensaje a todos los clientes si empieza con "#"
+                        broadcast(buffer_datos, conn)
                     elif mensaje == "?":  # Responder con un mensaje específico si el cliente envía "?"
-                        respuesta = "Funcionalidades: Si escribe # antes de un mensaje, ese mensaje se enviará a todos los clientes"
-                        "Si escribe logout se desconectará del server."
-                        conn.sendall((respuesta + '\n').encode('utf-8')) # Transforma el string en bytes
+                        respuesta = (
+                            "-------------------------------------------------------------------------------------\n"
+                            "Funcionalidades:\n"
+                            "1. Si escribe '#' antes de un mensaje, ese mensaje se enviará a todos los clientes.\n"
+                            "2. Si escribe 'logout', se desconectará del servidor.\n"
+                            "-------------------------------------------------------------------------------------"
+                        )
+                        conn.sendall((respuesta + '\n').encode('utf-8'))  # Enviar respuesta al cliente
                     else:
-                        conn.sendall(data)  # Enviar el eco de vuelta al cliente
-                    data.clear()
+                        conn.sendall(buffer_datos)  # Enviar el eco de vuelta al cliente
+                    buffer_datos.clear()
             except ConnectionError:
                 break
             except Exception as error:
                 print(f"[SERVIDOR] Error: {error}")
                 break
+
     print(f"[SERVIDOR] Desconectando {addr}")
     del clientes[addr]  # Remover el cliente del diccionario al desconectarse
     print(f"[SERVIDOR] Clientes conectados: {len(clientes)}")
 
 # Inicia el Servidor TCP y espera conexiones entrantes
 def iniciar_servidor():
-    
     print("[SERVIDOR] Iniciando")
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((TCP_IP, TCP_PORT))  # Enlazar el socket a la dirección IP y puerto
-        s.listen()  # Escuchar conexiones entrantes
-        print(f"[SERVIDOR] Escuchando {TCP_PORT}")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as servidor:
+        servidor.bind((TCP_IP, TCP_PORT))  # Enlazar el socket a la dirección IP y puerto
+        servidor.listen()  # Escuchar conexiones entrantes
+        print(f"[SERVIDOR] Escuchando en el puerto {TCP_PORT}")
+
         while True:
-            conn, addr = s.accept()  # Aceptar una nueva conexión y crear un hilo para manejarla
-            print(f"[SERVIDOR] Se unio: {addr}")
-            thread = threading.Thread(target=contacto_cliente, args=(conn, addr), daemon=True)
-            thread.start()
+            conn, addr = servidor.accept()  # Aceptar una nueva conexión
+            print(f"[SERVIDOR] Conexión desde: {addr}")
+            hilo = threading.Thread(target=manejar_cliente, args=(conn, addr), daemon=True)
+            hilo.start()
 
 if __name__ == "__main__":
     iniciar_servidor()

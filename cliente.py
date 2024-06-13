@@ -8,30 +8,28 @@ TCP_PORT = 12345
 BUFFER_SIZE = 1024  # Tamaño del búfer para la recepción de datos
 MESSAGE_DELIMITER = b'\n'  # Delimitador de mensajes
 
-socket_cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 # Permitir pasar la IP del servidor como argumento
 if len(sys.argv) >= 2:
     TCP_IP = sys.argv[1]
 
 # Recibe mensajes del servidor y los imprime.
-def recibir_mensajes(sock): # Conexión del socket con el servidor
+def recibir_mensajes(sock):
     while True:
         try:
-            data = bytearray()  # Buffer para acumular datos recibidos
+            buffer_datos = bytearray()  # Buffer para acumular datos recibidos
             while True:
-                recvd = sock.recv(BUFFER_SIZE)  # Recibir datos del servidor
-                if not recvd:
+                recibido = sock.recv(BUFFER_SIZE)  # Recibir datos del servidor
+                if not recibido:
                     break
-                data += recvd
-                if MESSAGE_DELIMITER in recvd:
-                    mensaje = data.rstrip(MESSAGE_DELIMITER).decode('utf-8')
-                    print(f"[CLIENTE] Se envio: {mensaje}")
+                buffer_datos += recibido
+                if MESSAGE_DELIMITER in recibido:
+                    mensaje = buffer_datos.rstrip(MESSAGE_DELIMITER).decode('utf-8')
+                    print(f"[CLIENTE] {mensaje}")
                     if mensaje.lower() == "logout":  # Finalizar la conexión si se recibe "logout"
-                        print("[CLIENTE] Desconectando del SERVER")
-                        sock.close() # Cerrar la conexión con el servidor
+                        print("[CLIENTE] Desconectando del servidor")
+                        sock.close()  # Cerrar la conexión con el servidor
                         return
-                    data.clear()
+                    buffer_datos.clear()
         except ConnectionError:
             print("[CLIENTE] Error de conexión")
             break
@@ -39,27 +37,24 @@ def recibir_mensajes(sock): # Conexión del socket con el servidor
             print(f"[CLIENTE] Error inesperado: {e}")
             break
 
-
 # Inicia el Cliente TCP y se conecta al servidor
 def iniciar_cliente():
     print("[CLIENTE] Iniciando")
-
-    with socket_cliente as s:
+    
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as cliente_socket:
         print("[CLIENTE] Conectando")
-        s.connect((TCP_IP, TCP_PORT))  # Conectarse al servidor
-        print(f"[CLIENTE] Conexion exitosa a {TCP_IP}:{TCP_PORT}")
+        cliente_socket.connect((TCP_IP, TCP_PORT))  # Conectarse al servidor
+        print(f"[CLIENTE] Conexión exitosa a {TCP_IP}:{TCP_PORT}")
 
-        receiver_thread = threading.Thread(target=recibir_mensajes, args=(s,), daemon=True)
-        receiver_thread.start()  # Iniciar un hilo para recibir mensajes
+        hilo_receptor = threading.Thread(target=recibir_mensajes, args=(cliente_socket,), daemon=True)
+        hilo_receptor.start()  # Iniciar un hilo para recibir mensajes
 
         while True:
             mensaje = input()  # Leer entrada del usuario y enviarla al servidor
+            cliente_socket.sendall((mensaje + '\n').encode('utf-8'))  # Enviar el mensaje
+
             if mensaje.lower() == "logout":  # Enviar "logout" y terminar la conexión
-                s.sendall((mensaje + '\n').encode('utf-8'))
                 break
-            s.sendall((mensaje + '\n').encode('utf-8'))
-
-
 
 if __name__ == "__main__":
     iniciar_cliente()

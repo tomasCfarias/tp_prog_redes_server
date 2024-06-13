@@ -3,6 +3,9 @@ Trabajo Practico para Programacion sobre redes
 Tomas Cabrera Farias
 
 
+Funcionalidad de ?: Si el server recibe "?" se devolvera al cliente un mensaje con las funcionalidades del programa.
+
+
 Que hace "server.py":
 
 Implementacion de un servidor TCP que:
