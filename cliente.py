@@ -19,28 +19,29 @@ def recibir_mensajes(sock):
             buffer_datos = bytearray()  # Buffer para acumular datos recibidos
             while True:
                 recibido = sock.recv(BUFFER_SIZE)  # Recibir datos del servidor
+                
                 if not recibido:
                     break
                 buffer_datos += recibido
+                
                 if MESSAGE_DELIMITER in recibido:
                     mensaje = buffer_datos.rstrip(MESSAGE_DELIMITER).decode('utf-8')
-                    print(f"[CLIENTE] {mensaje}")
+                    print(f"{mensaje}")
+                    
                     if mensaje.lower() == "logout":  # Finalizar la conexión si se recibe "logout"
                         print("[CLIENTE] Desconectando del servidor")
                         sock.close()  # Cerrar la conexión con el servidor
                         return
+                    
                     buffer_datos.clear()
         except ConnectionError:
             print("[CLIENTE] Error de conexión")
-            break
-        except Exception as e:
-            print(f"[CLIENTE] Error inesperado: {e}")
             break
 
 # Inicia el Cliente TCP y se conecta al servidor
 def iniciar_cliente():
     print("[CLIENTE] Iniciando")
-    
+   
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as cliente_socket:
         print("[CLIENTE] Conectando")
         cliente_socket.connect((TCP_IP, TCP_PORT))  # Conectarse al servidor
